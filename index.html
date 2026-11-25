@@ -154,6 +154,43 @@ form #chkB{flex-basis:100%;min-height:44px;font-size:15px;font-weight:400}
 .rule .banner.tiles .tile{flex:1;position:relative;overflow:hidden;aspect-ratio:1/1}
 .rule .banner.tiles .tile .pic{position:absolute;inset:0;width:100%;height:100%;border:0}
 .rule .banner.tiles .tile em{position:absolute;left:2px;bottom:2px;font:400 10px/1.2 "Public Sans",Arial,sans-serif;background:var(--paper);padding:1px 3px;max-width:94%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- motion ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@keyframes stamp{0%{opacity:0;transform:scale(1.5) rotate(-6deg)}55%{opacity:1;transform:scale(.94) rotate(1deg)}100%{transform:none}}
+@keyframes floatUp{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+@keyframes sweep{to{background-size:100% 100%}}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+@keyframes wipe{to{transform:scaleX(0)}}
+@keyframes scan{0%{background-position:120% 0}100%{background-position:-20% 0}}
+@keyframes redactIn{from{width:0}}
+@keyframes ring{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(1.7)}}
+@keyframes pulse{50%{transform:scaleY(1.6)}}
+@keyframes grow{from{width:0}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:none}}
+.enter .rule,.enter .chip,.enter .lbl,.enter #ask{animation:rise .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*45ms)}
+.enter #ruleB{--i:2}.enter .lbl{--i:3}
+.slots div{position:relative}
+.slots div.new{animation:stamp .42s cubic-bezier(.2,.8,.2,1) both}
+.slots div.new b{background:linear-gradient(var(--mark),var(--mark)) no-repeat 0 0/0% 100%;animation:sweep .45s .25s ease-out forwards}
+.slots .float{position:absolute;right:2px;top:2px;font:800 20px/1 "Big Shoulders Display",sans-serif;color:var(--ink);background:var(--mark);padding:2px 5px;pointer-events:none;animation:floatUp 1.3s .15s ease-out both}
+.slots div.rare::before{content:"";position:absolute;inset:-6px;border:3px solid var(--mark);pointer-events:none;animation:ring .8s .1s ease-out both}
+.slots div.rare .float{background:var(--ink);color:var(--mark)}
+#f.shake{animation:shake .38s}
+.rule.hid .bar{background:linear-gradient(100deg,var(--ink) 40%,#3a3a3a 50%,var(--ink) 60%) 0 0/250% 100%;animation:scan 3.2s linear infinite}
+.rule.hid .bar+.bar{animation-delay:.4s}
+.wipe{position:relative;display:inline-block}
+.wipe::after{content:"";position:absolute;inset:-1px -3px;background:var(--ink);transform-origin:right;animation:wipe .55s .35s cubic-bezier(.7,0,.3,1) forwards}
+#splash h1 .bar{animation:redactIn .7s .25s cubic-bezier(.7,0,.3,1) both}
+#splash .tops>div{animation:rise .4s both;animation-delay:calc(.5s + var(--i,0)*90ms)}
+.dots i{transition:background .3s}.dots i.now{animation:pulse 1.6s ease-in-out infinite}
+#after.enter>*{animation:rise .4s both;animation-delay:calc(var(--i,0)*70ms)}
+#after.enter #aList li{animation:rise .35s both;animation-delay:calc(.3s + var(--i,0)*90ms)}
+#tiers .hit{animation:pop .45s .6s both}
+.dist i{animation:grow .7s .3s cubic-bezier(.2,.8,.2,1) both}
+.stats>div{animation:rise .4s both;animation-delay:calc(.2s + var(--i,0)*70ms)}
+.btn{transition:transform .12s}.btn:active{transform:translateY(2px)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -4291,7 +4328,7 @@ function stats(){
   let cur=0;for(let k=d[N]!=null?N:N-1;d[k]!=null;k--)cur++;
   const vals=ks.map(k=>d[k]),avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
   const cnt=BANDS.map(([a,b])=>vals.filter(v=>v>=a&&v<=b).length),mx=Math.max(1,...cnt),mine=d[N];
-  return `<div class="stats"><div><b>${vals.length}</b><span>Played</span></div><div><b>${avg}</b><span>Average</span></div><div><b>${cur}</b><span>Current streak</span></div><div><b>${best}</b><span>Best streak</span></div></div>
+  return `<div class="stats"><div style="--i:0"><b>${vals.length}</b><span>Played</span></div><div style="--i:1"><b>${avg}</b><span>Average</span></div><div style="--i:2"><b>${cur}</b><span>Current streak</span></div><div style="--i:3"><b>${best}</b><span>Best streak</span></div></div>
    <div class="dist"><div class="soft" style="display:block;margin-bottom:4px">First-attempt scores</div>${BANDS.map(([a,b],j)=>`<div><span>${b>1e8?a+'+':a+'–'+b}</span><i class="${mine!=null&&mine>=a&&mine<=b?'me':''}" style="width:${Math.max(8,cnt[j]/mx*100)}%">${cnt[j]}</i></div>`).join('')}</div>
    <p class="soft" style="margin-top:0">A streak counts days played in a row. Missing a day simply starts it again.</p>`;
 }
@@ -4315,14 +4352,18 @@ function rulePic(q,t){
 function ruleCard(q,which){
   const t=which==='r'?R_(q):C_(q),T=TYPES[q.topic],hidden=q.hide===which&&!RUN.rev[RUN.c];
   const field=which==='r'?T.rowField:t.dom;
-  return hidden?`<span class="banner blank"></span><small>Hidden rule</small><span class="bar"></span><span class="bar"></span>`:`${rulePic(q,t)}<small>${q.hide===which?'Hidden rule, shown':'Printed rule'}</small>${t.label}`;
+  return hidden?`<span class="banner blank"></span><small>Hidden rule</small><span class="bar"></span><span class="bar"></span>`:`${rulePic(q,t)}<small>${q.hide===which?'Hidden rule, shown':'Printed rule'}</small>${q.hide===which&&FX.reveal?`<span class="wipe">${t.label}</span>`:t.label}`;
 }
+const FX={last:-1,slot:-1,reveal:false};
+function shake(){const f=$('#f');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake')}
+function countUp(el,to){if(matchMedia('(prefers-reduced-motion: reduce)').matches||!el)return;const t0=performance.now(),d=900;(function k(t){const p=Math.min(1,(t-t0)/d);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(k)})(t0)}
 function showCase(){
   const q=cur(),T=TYPES[q.topic],i=RUN.c;
   $('#play').hidden=false;$('#after').hidden=true;
+  const fresh=FX.last!==i;FX.last=i;const pl=$('#play');pl.classList.remove('enter');if(fresh){void pl.offsetWidth;pl.classList.add('enter')}let ci=3;
   $('#ruleA').innerHTML=ruleCard(q,'r');$('#ruleB').innerHTML=ruleCard(q,'c');
   $('#ruleA').classList.toggle('hid',q.hide==='r'&&!RUN.rev[i]);$('#ruleB').classList.toggle('hid',q.hide==='c'&&!RUN.rev[i]);
-  const chip=(x,cls='')=>`<span class="chip ${cls}">${picOf(q.topic,x)}${T.show(x)}</span>`;
+  const chip=(x,cls='')=>`<span class="chip ${cls}" style="--i:${ci++}">${picOf(q.topic,x)}${T.show(x)}</span>`;
   const ck=(RUN.checks||{})[i]||[];
   $('#known').innerHTML=`<div class="lbl">Fit both rules</div><div class="chips">${q.known.map(x=>chip(x)).join('')}</div>`+
     ((q.near||[]).length?`<div class="lbl">Fit the printed rule, but not the hidden one</div><div class="chips">${q.near.map(x=>chip(x,'not')).join('')}</div>`:'')+
@@ -4331,7 +4372,7 @@ function showCase(){
   const left=(q.checks??2)-ck.length;$('#chkB').textContent=`Check whether it fits the hidden rule (${left} left, free)`;$('#chkB').disabled=left<=0||!!RUN.rev[i];
   $('#ask').innerHTML=`Name ${PICKS} more ${T.name.toLowerCase()} that fit both rules. ${answersOf(q).length} would work.`;
   const f=RUN.found[i]||[];
-  $('#slots').innerHTML=Array.from({length:PICKS},(_,k)=>f[k]?`<div class="got">${picOf(q.topic,f[k].a)}<b>${T.show(f[k].a)}</b>${TIER[f[k].p]}, +${f[k].pts}</div>`:`<div>Answer ${k+1}</div>`).join('');
+  $('#slots').innerHTML=Array.from({length:PICKS},(_,k)=>f[k]?`<div class="got${k===FX.slot?' new'+(f[k].p>=4?' rare':''):''}">${picOf(q.topic,f[k].a)}<b>${T.show(f[k].a)}</b>${TIER[f[k].p]}, +${f[k].pts}${k===FX.slot?`<span class="float">+${f[k].pts}</span>`:''}</div>`:`<div>Answer ${k+1}</div>`).join('');
   $('#in').placeholder=T.ph;$('#in').value='';
   $('#left').textContent=`Misses left: ${MIST-(RUN.miss[i]||0)} of ${MIST}`;
   $('#revB').hidden=!!RUN.rev[i];
@@ -4340,12 +4381,13 @@ function showCase(){
   $('#swapNote').textContent=RUN.swaps.length?`Swaps used: ${RUN.swaps.length} of ${SWAPS}.`:'';
   const tr=RUN.tries[i]||[];
   $('#log').innerHTML=tr.length?tr.slice().reverse().map(t=>`<li><b>${t.a}</b>: ${t.vis?'fits the printed rule, not the hidden one':"doesn't fit the printed rule"}</li>`).join(''):'<li>None yet. A miss tells you whether it at least fitted the printed rule.</li>';
+  FX.slot=-1;FX.reveal=false;
   header();setTimeout(()=>$('#in').focus(),50);
 }
 $('#f').onsubmit=e=>{
   e.preventDefault();const q=cur(),T=TYPES[q.topic],i=RUN.c,v=$('#in').value,msg=$('#msg');if(!v.trim()||RUN.done||RUN.ended[i])return;
   let a=T.find(v);
-  if(a===null){msg.textContent=`We don't have "${v.trim()}" in our list of ${T.name.toLowerCase()}. Check the spelling, or try another. It doesn't count as a miss.`;return}
+  if(a===null){msg.textContent=`We don't have "${v.trim()}" in our list of ${T.name.toLowerCase()}. Check the spelling, or try another. It doesn't count as a miss.`;shake();return}
   const fix=T.find.fixed?`Read "${v.trim()}" as ${T.show(a)}. `:'';
   if(q.known.includes(a)){msg.textContent=`${fix}${T.show(a)} is already given. Name a different one.`;return}
   const f=RUN.found[i]=RUN.found[i]||[];
@@ -4355,14 +4397,14 @@ $('#f').onsubmit=e=>{
     if(alt){a=alt;okR=okC=true}}
   if(okR&&okC){const p=obOf(q,a),pts=RUN.rev[i]?Math.round(PTS[p]/2):PTS[p];f.push({a,p,pts});
     msg.innerHTML=`${fix}<span class="ok">${T.show(a)} fits.</span> ${TIER[p]} answer: <b>+${pts} points</b>${RUN.rev[i]?' (halved)':''}.`;save();
-    if(f.length>=PICKS)return endCase();return showCase()}
+    FX.slot=f.length-1;if(f.length>=PICKS){showCase();setTimeout(endCase,1100);return}return showCase()}
   const vis=q.hide==='c'?okR:okC;
   RUN.miss[i]=(RUN.miss[i]||0)+1;(RUN.tries[i]=RUN.tries[i]||[]).push({a:T.show(a),vis});save();
   msg.innerHTML=fix+(vis?`${T.show(a)} fits the printed rule, but <span class="no">not the hidden one</span>.`:`${T.show(a)} <span class="no">doesn't fit the printed rule</span>.`);
-  if(RUN.miss[i]>=MIST)return endCase();showCase();
+  if(RUN.miss[i]>=MIST)return endCase();showCase();shake();
 };
 $('#revB').onclick=()=>{open(`<h3>Show the hidden rule?</h3><p>Anything you answer after this scores half. Answers you already have keep their points.</p><div><button class="btn solid" id="yes">Show it</button><button class="btn" onclick="dlg.close()">Keep guessing</button></div>`);
-  $('#yes').onclick=()=>{RUN.rev[RUN.c]=true;save();dlg.close();showCase()}};
+  $('#yes').onclick=()=>{RUN.rev[RUN.c]=true;save();dlg.close();FX.reveal=true;showCase()}};
 $('#chkB').onclick=()=>{
   const q=cur(),T=TYPES[q.topic],i=RUN.c,v=$('#in').value,msg=$('#msg');if(!v.trim()||RUN.done||RUN.ended[i])return;
   RUN.checks=RUN.checks||{};const ck=RUN.checks[i]=RUN.checks[i]||[];if(ck.length>=(q.checks??2))return;
@@ -4386,13 +4428,15 @@ function endCase(){
   $('#play').hidden=true;$('#after').hidden=false;
   $('#aMsg').innerHTML=$('#msg').innerHTML;
   $('#aTitle').textContent=`Puzzle ${i+1}: ${caseScore(i)} points`;
-  $('#aRule').innerHTML=`The hidden rule was <b>${(q.hide==='c'?C_(q):R_(q)).label}</b>, paired with <b>${(q.hide==='c'?R_(q):C_(q)).label}</b>.`;
-  $('#aList').innerHTML=f.length?f.map(x=>`<li><span>${picOf(q.topic,x.a)}<b>${T.show(x.a)}</b> (${TIER[x.p].toLowerCase()})</span><span>+${x.pts}</span></li>`).join(''):'<li><span>No answers found</span><span>0</span></li>';
+  $('#aRule').innerHTML=`The hidden rule was <b class="wipe">${(q.hide==='c'?C_(q):R_(q)).label}</b>, paired with <b>${(q.hide==='c'?R_(q):C_(q)).label}</b>.`;
+  $('#aList').innerHTML=f.length?f.map((x,j)=>`<li style="--i:${j}"><span>${picOf(q.topic,x.a)}<b>${T.show(x.a)}</b> (${TIER[x.p].toLowerCase()})</span><span>+${x.pts}</span></li>`).join(''):'<li><span>No answers found</span><span>0</span></li>';
   $('#tiers').innerHTML=[1,2,3,4,5].map(t=>`<div class="${f.some(x=>x.p===t)?'hit':''}"><b>${PTS[t]}</b>${TIER[t]}</div>`).join('');
   const rest=answersOf(q).filter(x=>!f.some(y=>y.a===x)).sort((a,b)=>obOf(q,b)-obOf(q,a)||String(a).localeCompare(String(b)));
   $('#rare').innerHTML=allAnswers(q,i);
   $('#nextB').textContent=i<NC-1?'Next puzzle':'See results';
   $('#msg').textContent='';header();
+  const af=$('#after');[...af.children].forEach((c,j)=>c.style.setProperty('--i',j));af.classList.remove('enter');void af.offsetWidth;af.classList.add('enter');
+  const sc=caseScore(i);(function(){const el=$('#aTitle');if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const t0=performance.now();(function k(t){const p=Math.min(1,(t-t0)/800);el.textContent=`Puzzle ${i+1}: ${Math.round(sc*(1-Math.pow(1-p,3)))} points`;if(p<1)requestAnimationFrame(k)})(t0)})();
 }
 $('#nextB').onclick=()=>{if(RUN.c<NC-1){RUN.c++;save();showCase()}else{RUN.done=true;RUN.history.push(total());record();save();header();results()}};
 
@@ -4429,7 +4473,7 @@ function results(){
    <p class="soft" style="font-size:13px;margin:0 0 6px">One square per puzzle: 🟪 200 points or more, 🟦 120 or more, 🟩 60 or more, 🟨 under 60, ⬛ none. The text gives away none of the answers.</p>
    <div><button class="btn solid" id="cp">Copy result</button><button class="btn" id="again">Practise again</button></div>
    <p class="soft">Trying again replays the same three puzzles for practice. It does not change today's official score. <span class="nextin"></span></p>`);
-  tick();$('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(share());$('#cp').textContent='Copied'}catch(e){const r=document.createRange();r.selectNodeContents($('#sh'));getSelection().removeAllRanges();getSelection().addRange(r);$('#cp').textContent='Selected: copy it'}};
+  countUp($('.dlg p.big'),off);tick();$('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(share());$('#cp').textContent='Copied'}catch(e){const r=document.createRange();r.selectNodeContents($('#sh'));getSelection().removeAllRanges();getSelection().addRange(r);$('#cp').textContent='Selected: copy it'}};
   $('#again').onclick=()=>{const keep={attempt:RUN.attempt+1,history:RUN.history,swaps:RUN.swaps,first:RUN.first};RUN={...fresh(),...keep};save();dlg.close();CS=dailyCases();applySwaps();showCase()};
 }
 async function credits(){
@@ -4464,7 +4508,7 @@ function help(){
    <p class="soft">Today's topics: ${TOPICS.map(t=>TYPES[t].name).join(', ')}. Topics change daily and are drawn from a pool of twelve. The first puzzle is easy; the third conceals the other rule and begins with less familiar answers. A day usually takes a few minutes.</p>`);
 }
 $('#splashMeta').innerHTML=`No. ${N}, ${dateOf(N).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`;
-$('#topicsS').innerHTML=`<div class="lbl">Today's topics</div><div class="tops">${TOPICS.map(t=>`<div>${DRAW[t]}<span>${TYPES[t].name}</span></div>`).join('')}</div>`;
+$('#topicsS').innerHTML=`<div class="lbl">Today's topics</div><div class="tops">${TOPICS.map((t,j)=>`<div style="--i:${j}">${DRAW[t]}<span>${TYPES[t].name}</span></div>`).join('')}</div>`;
 $('#playS').textContent=RUN.done?'See results':(RUN.c>0||Object.keys(RUN.found).length)?`Carry on with puzzle ${RUN.c+1}`:'Start';
 $('#playS').onclick=()=>{$('#splash').hidden=true;if(RUN.done){header();$('#play').hidden=true;results()}else if(RUN.ended[RUN.c])endCase();else showCase()};
 $('#howS').onclick=help;$('#helpB').onclick=help;
